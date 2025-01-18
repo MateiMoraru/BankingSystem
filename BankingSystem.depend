@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1737227855 source:c:\users\morar\onedrive\documents\proiectinformatica\proiectcufrz\main.cpp
+	<iostream>
+	<ctime>
+	<chrono>
+	<cstring>
+	<fstream>
+	<cstdlib>
+
