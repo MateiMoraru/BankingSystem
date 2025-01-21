@@ -96,6 +96,17 @@ float str_to_float(char *str)
     return result;
 }
 
+void print_client_transaction(transaction *transfer)
+{
+
+    cout << "FROM: " << transfer -> emitter_id << endl
+            << "TO: " << transfer -> receiver_id << endl
+            << "SUM: " << transfer -> sum << endl
+            << "DATE:\t" << transfer -> transaction_date.day << "/"
+                         << transfer -> transaction_date.month << "/"
+                         << transfer -> transaction_date.year << endl << endl;
+}
+
 void print_client_transactions(client &current_client)
 {
     transaction current_transaction;
@@ -103,13 +114,7 @@ void print_client_transactions(client &current_client)
     {
         current_transaction = current_client.transactions[i];
         cout << "transaction " << i + 1 << ": " << endl;
-        cout << "FROM: " << current_transaction.emitter_id << endl
-             << "TO: " << current_transaction.receiver_id << endl
-             << "SUM: " << current_transaction.sum << endl
-             << "DATE:\t" << current_transaction.transaction_date.day << endl
-                  << "\t" << current_transaction.transaction_date.month << endl
-                  << "\t" << current_transaction.transaction_date.year << endl
-             ;
+        print_client_transaction(&current_transaction);
     }
 }
 
@@ -315,10 +320,41 @@ void transfer(client *clients, client *selected_client, date current_date)
     selected_client -> balance -= sum;
 }
 
+// Search transfers
+
+// If there are multiple transfers that match the criterium, show all of them
+// Do not save them, just print them numbered
+
+void search_transfer_receiver_id(client *current_client, int receiver_id)
+{
+    int length = current_client -> length_transactions;
+    int transaction_idx = 1;
+
+    for(int i = 0; i < length; i++)
+    {
+        if(current_client -> transactions[i].receiver_id == receiver_id)
+        {
+            cout << transaction_idx++ << ".";
+            print_client_transaction(&current_client -> transactions[i]);
+        }
+    }
+}
+
+void search_transfer_emitter_id(int emitter_id)
+{
+
+}
+
+void search_transfer_date(int day, int month, int year)
+{
+
+}
+
 /*
     TODO: Sort transactions
-    TODO: Search transaction
+    TODO: Search transaction (menu)
     TODO: Saving client data into utilizatori.out
+    TODO: cerr if not found fin
 */
 int main()
 {
@@ -335,8 +371,9 @@ int main()
     client *selected_client;
     bool logged_in = false;
     length_clients = citire_utilizatori(clients);
-
-    cout << "Date: " << current_date.day << ':' << current_date.month << ':' << current_date.year << endl;
+    //print_client_data(clients[0]);
+    cout << "---ADMINISTRAREA UNEI APLICATII BANCARE---" << endl;
+    cout << "Date: " << current_date.day << '/' << current_date.month << '/' << current_date.year << endl;
 
     cout << "Pentru a folosi programul, tasteaza comanda din paranteza!" << endl;
     cout << "Pentru a sterge ecranul, tasteaza \"clear\"" << endl;
@@ -362,9 +399,11 @@ int main()
                 {
                     cout << "\tLogin into account" << endl;
                     selected_client = login(clients, length_clients);
-                    cout << "\tSuccessfully logged in, " << selected_client->name << "!" << endl;
-                    logged_in = true;
-
+                    if(selected_client != nullptr)
+                    {
+                        cout << "\tSuccessfully logged in, " << selected_client->name << "!" << endl;
+                        logged_in = true;
+                    }
                 }
                 else if(strcmp(command, "create") == 0)
                 {
@@ -372,11 +411,11 @@ int main()
                     print_client_data(clients[length_clients]);
                     length_clients++;
                 }
-                else if(strcmp(command, "show"))
+                else if(strcmp(command, "show") == 0)
                 {
                     for(int i = 0; i < length_clients; i++)
                     {
-                        print_client_data(clients[length_clients]);
+                        print_client_data(clients[i]);
                     }
                 }
                 else
@@ -405,6 +444,14 @@ int main()
                     else
                         unknown_command_err();
 
+                }
+                else if(strcmp(command, "search") == 0)
+                {
+                    cout << "Cautati dupa (id) ";
+                    int id;
+                    cin >> id;
+                    cout << endl;
+                    search_transfer_receiver_id(selected_client, id);
                 }
                 else if(strcmp(command, "deposit") == 0)
                 {

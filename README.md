@@ -1,7 +1,8 @@
 # Primite Banking System
 
 ---
-## Basic commands
+
+## Basic commands/menus
 
 ### Primary Menu
 
@@ -12,11 +13,11 @@
 
 After logging in, you are prompted into the secondary menu
 
-### Secondar Menu
+### Secondary Menu
 
 1. Show data (show) - Prompts you into the *Show Data Menu*;
 2. Sort transactions (sort) - Sorts transactions *TODO*;
-3. Search transaction (search) - Prompts you into another menu (search by receiver, sum, date) *TODO*;
+3. Search transaction (search) - Prompts you into another menu (search by receiver's id, sum of money transfered, as well as the date);
 4. Send money (transfer) - Requires receiver id and sum;
 5. Deposit (deposit) - Requires the amount you want to deposit into your account;
 6. Logout (logout) - Logs you out of your account, prompts you back into the *Primary Menu*;
@@ -30,8 +31,18 @@ After logging in, you are prompted into the secondary menu
 5. Transactions (transactions) - Prints account transactions;
 6. All (a) - Prints everything;
 
+
+### Search Transaction
+Looks for the specified criterium and prints all the matched transfers
+
+1. Reciever's ID
+2. Emitter's ID
+2. Date
+3. Sum
+
+<br>
 ---
-*TODO: Sort transactions;*
-*TODO: Search transaction;*
-*TODO: Saving client data into utilizatori.out;*
+<br>
+*TODO: Sort transactions;* <br>
+*TODO: Check input error conversion (currently some don't work because of "isdigit()" function;*<br>
 *TODO: Sorting accounts by multiple parameters;*
