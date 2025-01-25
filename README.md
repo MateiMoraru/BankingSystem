@@ -44,5 +44,4 @@ Looks for the specified criterium and prints all the matched transfers
 ---
 <br>
 *TODO: Sort transactions;* <br>
-*TODO: Check input error conversion (currently some don't work because of "isdigit()" function;*<br>
 *TODO: Sorting accounts by multiple parameters;*
