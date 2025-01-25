@@ -4,6 +4,7 @@
 #include <cstring>
 #include <fstream>
 #include <cstdlib>
+#include <cctype>
 using namespace std;
 
 struct date
@@ -94,6 +95,50 @@ float str_to_float(char *str)
     }
 
     return result;
+}
+
+char* float_to_char(float number) {
+    bool is_negative = number < 0;
+    if (is_negative) {
+        number *= -1;
+    }
+
+    int integer_part = static_cast<int>(number);
+    float fractional_part = number - integer_part;
+
+    char* buffer = new char[50];
+    int index = 0;
+
+    if (is_negative) {
+        buffer[index++] = '-';
+    }
+
+    char int_buffer[20];
+    int int_index = 0;
+    if (integer_part == 0) {
+        int_buffer[int_index++] = '0';
+    } else {
+        while (integer_part > 0) {
+            int_buffer[int_index++] = '0' + (integer_part % 10);
+            integer_part /= 10;
+        }
+        for (int i = int_index - 1; i >= 0; --i) {
+            buffer[index++] = int_buffer[i];
+        }
+    }
+
+    buffer[index++] = '.';
+
+    for (int i = 0; i < 2; ++i) {
+        fractional_part *= 10;
+        int digit = static_cast<int>(fractional_part);
+        buffer[index++] = '0' + digit;
+        fractional_part -= digit;
+    }
+
+    buffer[index] = '\0';
+
+    return buffer;
 }
 
 void print_client_transaction(transaction *transfer)
@@ -192,6 +237,7 @@ int citire_utilizatori(client *clients)
         memset(&current_client, 0, sizeof(current_client)); // Resetting the user data (for transactions especially)
 
     }
+    fin.close();
 
     cout << endl;
     return length_clients;
@@ -231,11 +277,33 @@ void show_data_menu()
     cout << "ALL (a)" << endl << endl;
 }
 
+void search_transactions_menu()
+{
+    cout << endl;
+    cout << "\tSearch Transactions" << endl;
+    cout << "Receiver id (receiver)" << endl;
+    cout << "Emitter id (emitter)" << endl;
+    cout << "Sum of money (sum)" << endl;
+    cout << "Date (date)" << endl << endl;
+}
+
 client* login(client clients[], int length_clients)
 {
     int id;
     cout << "Input your id: ";
     cin >> id;
+
+    // In caz ca user-ul scrie un alt tip de variabila decat cel asteptat
+    while(cin.fail())
+    {
+        cout << "Please input a valid ID! (type int)" << endl;
+        // Sterge error state ul
+        cin.clear();
+        // Inlatureaza inputul invalid
+        cin.ignore(1000, '\n');
+        // Asteapta input nou
+        cin >> id;
+    }
 
     for(int i = 0; i < length_clients; i++)
     {
@@ -279,30 +347,37 @@ void transfer(client *clients, client *selected_client, date current_date)
     int emitter = selected_client -> _id;
     int receiver;
     int sum;
+
     cout << "\tTransfer money" << endl;
     cout << "To whom do you want to send money to? ";
     cin >> receiver;
-    while(receiver == emitter || receiver <= 1000)
+
+    while(receiver == emitter || receiver <= 1000 || cin.fail())
     {
-        cout << "You must input a valid id! (id>1000, can't be your own account)" << endl << "Input receiver id: ";
+        if(cin.fail())
+        {
+            cin.clear();
+            cin.ignore(1000, '\n');
+        }
+        cout << "You must input a valid id! (id>1000, can't be your own account, must be a digit!!!)" << endl << "Input receiver id: ";
         cin >> receiver;
         cout << endl;
+
     }
     cout << endl << "How much do you want to send? ";
     cin >> sum;
 
-    while(sum > selected_client -> balance)
+    while(sum > selected_client -> balance || sum <= 0 || cin.fail())
     {
-        cout << "Not enough funds! Input a smaller amount!" << endl;
+        if(cin.fail())
+        {
+            cin.clear();
+            cin.ignore(1000, '\n');
+        }
+        cout << "Please input a valid number! (either inputted number is not a digit, is negative/null, or it is greater than your funds!)" << endl;
         cin >> sum;
         cout << endl;
-    }
 
-    while(sum <= 0)
-    {
-        cout << "Sum must be greater than 0; Try again: ";
-        cin >> sum;
-        cout << endl;
     }
 
     transaction new_transaction;
@@ -325,7 +400,7 @@ void transfer(client *clients, client *selected_client, date current_date)
 // If there are multiple transfers that match the criterium, show all of them
 // Do not save them, just print them numbered
 
-void search_transfer_receiver_id(client *current_client, int receiver_id)
+void search_transaction_receiver_id(client *current_client, int receiver_id)
 {
     int length = current_client -> length_transactions;
     int transaction_idx = 1;
@@ -340,21 +415,90 @@ void search_transfer_receiver_id(client *current_client, int receiver_id)
     }
 }
 
-void search_transfer_emitter_id(int emitter_id)
+void search_transaction_emitter_id(client *current_client, int emitter_id)
 {
+    int length = current_client -> length_transactions;
+    int transaction_idx = 1;
 
+    for(int i = 0; i < length; i++)
+    {
+        if(current_client -> transactions[i].emitter_id == emitter_id)
+        {
+            cout << transaction_idx++ << ".";
+            print_client_transaction(&current_client -> transactions[i]);
+        }
+    }
 }
 
-void search_transfer_date(int day, int month, int year)
+void search_transaction_sum(client *current_client, int sum)
 {
+    int length = current_client -> length_transactions;
+    int transaction_idx = 1;
 
+    for(int i = 0; i < length; i++)
+    {
+        if(current_client -> transactions[i].sum == sum)
+        {
+            cout << transaction_idx++ << ".";
+            print_client_transaction(&current_client -> transactions[i]);
+        }
+    }
+}
+
+void search_transaction_date(client *current_client, int day, int month, int year)
+{
+    int length = current_client -> length_transactions;
+    int transaction_idx = 1;
+
+    for(int i = 0; i < length; i++)
+    {
+        if(current_client -> transactions[i].transaction_date.day == day &&
+           current_client -> transactions[i].transaction_date.month == month &&
+           current_client -> transactions[i].transaction_date.year == year)
+        {
+            cout << transaction_idx++ << ".";
+            print_client_transaction(&current_client -> transactions[i]);
+        }
+    }
+}
+
+void client_to_text(client *user, char *str)
+{
+    strcat(str, user -> name);
+    strcat(str, " ");
+    strcat(str, user -> surname);
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> _id));
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> balance));
+    strcat(str, " | ");
+
+    for(int i = 0; i < user -> length_transactions; i++)
+    {
+        strcat(str, float_to_char(user -> transactions[i].emitter_id));
+        strcat(str, " ");
+        strcat(str, float_to_char(user -> transactions[i].receiver_id));
+        strcat(str, " ");
+        strcat(str, float_to_char(user -> transactions[i].sum));
+        strcat(str, " ");
+        strcat(str, float_to_char(user -> transactions[i].transaction_date.day));
+        strcat(str, " ");
+        strcat(str, float_to_char(user -> transactions[i].transaction_date.month));
+        strcat(str, " ");
+        strcat(str, float_to_char(user -> transactions[i].transaction_date.year));
+        strcat(str, " ");
+        strcat(str, "; ");
+
+    }
+
+    strcat(str, " }\n");
 }
 
 /*
     TODO: Sort transactions
-    TODO: Search transaction (menu)
-    TODO: Saving client data into utilizatori.out
+    TODO: Saving client data into utilizatori.in
     TODO: cerr if not found fin
+    TODO: Errors for wrong variable type in inputs
 */
 int main()
 {
@@ -371,16 +515,17 @@ int main()
     client *selected_client;
     bool logged_in = false;
     length_clients = citire_utilizatori(clients);
-    //print_client_data(clients[0]);
+
     cout << "---ADMINISTRAREA UNEI APLICATII BANCARE---" << endl;
     cout << "Date: " << current_date.day << '/' << current_date.month << '/' << current_date.year << endl;
 
     cout << "Pentru a folosi programul, tasteaza comanda din paranteza!" << endl;
-    cout << "Pentru a sterge ecranul, tasteaza \"clear\"" << endl;
+    cout << "Pentru a sterge ecranul, tasteaza \"clear\"!" << endl;
+    cout << "Pentru a salva modificarile facute in useri, tastati \"exit\" pentru a termina programul!" << endl << endl;
 
     char command[99];
 
-    while(strcmp(command, "EXIT") != 0)
+    while(strcmp(command, "EXIT") != 0 && strcmp(command, "exit") != 0)
     {
         if(!logged_in)
             first_menu();
@@ -447,19 +592,90 @@ int main()
                 }
                 else if(strcmp(command, "search") == 0)
                 {
-                    cout << "Cautati dupa (id) ";
-                    int id;
-                    cin >> id;
-                    cout << endl;
-                    search_transfer_receiver_id(selected_client, id);
+                    search_transactions_menu();
+                    cin >> command;
+                    if(strcmp(command, "receiver") == 0)
+                    {
+                        int id;
+                        cout << "Specify the id: ";
+                        cin >> id;
+                        cout << endl;
+                        if(!cin.fail())
+                            search_transaction_receiver_id(selected_client, id);
+                        else
+                        {
+                            cout << "Please input valid numbers!!!" << endl;
+                            cin.clear();
+                            cin.ignore(1000, '\n');
+                        }
+                    }
+                    else if(strcmp(command, "emitter") == 0)
+                    {
+                        int id;
+                        cout << "Specify the id: ";
+                        cin >> id;
+                        cout << endl;
+                        if(!cin.fail())
+                            search_transaction_emitter_id(selected_client, id);
+                        else
+                        {
+                            cout << "Please input valid numbers!!!" << endl;
+                            cin.clear();
+                            cin.ignore(1000, '\n');
+                        }
+                    }
+                    else if(strcmp(command, "sum") == 0)
+                    {
+                        int sum;
+                        cout << "Specify the id: ";
+                        cin >> sum;
+                        cout << endl;
+                        if(!cin.fail())
+                            search_transaction_sum(selected_client, sum);
+                        else
+                        {
+                            cout << "Please input valid numbers!!!" << endl;
+                            cin.clear();
+                            cin.ignore(1000, '\n');
+                        }
+                    }
+                    else if(strcmp(command, "date") == 0)
+                    {
+                        cout << "Specify the day, month and year (use a space between them): ";
+                        int day, month, year;
+                        cin >> day >> month >> year;
+                        cout << endl;
+                        if(!cin.fail())
+                            search_transaction_date(selected_client, day, month, year);
+                        else
+                        {
+                            cout << "Please input valid numbers!!!" << endl;
+                            cin.clear();
+                            cin.ignore(1000, '\n');
+                        }
+
+                    }
+                    else
+                    {
+                        unknown_command_err();
+                    }
                 }
                 else if(strcmp(command, "deposit") == 0)
                 {
                     int sum;
                     cout << "How much do you want to deposit: ";
                     cin >> sum;
-                    selected_client -> balance += sum;
-                    cout << endl << "Current balance: " << selected_client -> balance << endl;
+                    if(!cin.fail())
+                    {
+                        selected_client -> balance += sum;
+                        cout << endl << "Current balance: " << selected_client -> balance << endl;
+                    }
+                    else
+                    {
+                        cout << "Please input valid numbers!!!" << endl;
+                        cin.clear();
+                        cin.ignore(1000, '\n');
+                    }
                 }
                 else if(strcmp(command, "transfer") == 0)
                 {
@@ -481,7 +697,15 @@ int main()
     }
 
     //----
+    // Saving in utilizatori.in
+    char save_content[10000];
+    for(int i = 0; i < length_clients; i++)
+    {
+        client_to_text(&clients[i], save_content);
+    }
 
-
+    ofstream fout("utilizatori.out"); // Temporary .out to make sure were not overwriting data containing errors;
+    fout << save_content;
+    fout.close();
     return 0;
 }
