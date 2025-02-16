@@ -16,7 +16,7 @@ After logging in, you are prompted into the secondary menu
 ### Secondary Menu
 
 1. Show data (show) - Prompts you into the *Show Data Menu*;
-2. Sort transactions (sort) - Sorts transactions *TODO*;
+2. Sort transactions (sort) - Sorts transactions *Sort Menu*;
 3. Search transaction (search) - Prompts you into another menu (search by receiver's id, sum of money transfered, as well as the date);
 4. Send money (transfer) - Requires receiver id and sum;
 5. Deposit (deposit) - Requires the amount you want to deposit into your account;
@@ -31,6 +31,10 @@ After logging in, you are prompted into the secondary menu
 5. Transactions (transactions) - Prints account transactions;
 6. All (a) - Prints everything;
 
+### Sort Menu
+
+1. Sort by date (date) - Asks you wheather you want to sort from recent to oldest transaction date
+2. Sort by sum (sum) - Asks you wheather you want to sort from greatest to smallest transaction sum
 
 ### Search Transaction
 Looks for the specified criterium and prints all the matched transfers
@@ -43,5 +47,4 @@ Looks for the specified criterium and prints all the matched transfers
 <br>
 ---
 <br>
-*TODO: Sort transactions;* <br>
 *TODO: Sorting accounts by multiple parameters;*

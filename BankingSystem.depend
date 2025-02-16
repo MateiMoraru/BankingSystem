@@ -7,3 +7,13 @@
 	<fstream>
 	<cstdlib>
 
+1739723924 source:c:\users\mirmo\desktop\matei\proiect informatica\primitivebankingsystem\main.cpp
+	<iostream>
+	<ctime>
+	<chrono>
+	<cstring>
+	<string>
+	<fstream>
+	<cstdlib>
+	<cctype>
+

@@ -2,6 +2,7 @@
 #include <ctime>
 #include <chrono>
 #include <cstring>
+#include <string>
 #include <fstream>
 #include <cstdlib>
 #include <cctype>
@@ -462,6 +463,95 @@ void search_transaction_date(client *current_client, int day, int month, int yea
     }
 }
 
+int compare_dates(date date1, date date2)
+{
+    // out 0 -> date1 < date2
+    if(date1.year < date2.year)
+        return 0;
+    else if(date1.year > date2.year)
+        return 1;
+    else if(date1.year == date2.year)
+        if(date1.month < date2.month)
+            return 0;
+        else if(date1.month > date2.month)
+            return 1;
+        else
+        {
+            if(date1.day < date2.day)
+                return 0;
+            else if(date1.day > date2.day)
+                return 1;
+            else
+                return 0; // if the dates are equal return date1;
+        }
+}
+
+void sort_transactions_sum(client *current_client, int greatest)
+{
+    int length = current_client -> length_transactions;
+    transaction transactions[length];
+    for(int i = 0; i < length; i++)
+    {
+        transactions[i] = current_client -> transactions[i];
+    }
+
+    for(int i = 0; i < length - 1; i++)
+    {
+        int idx_min = i;
+        for(int j = i + 1; j < length; j++)
+        {
+            if(transactions[j].sum < transactions[idx_min].sum)
+                idx_min = j;
+        }
+
+        transaction aux = transactions[i];
+        transactions[i] = transactions[idx_min];
+        transactions[idx_min] = aux;
+    }
+
+    if(greatest == 0)
+        for(int i = 0; i < length; i++)
+            print_client_transaction(&transactions[i]);
+    else
+        for(int i = length - 1; i >= 0; i--)
+            print_client_transaction(&transactions[i]);
+}
+
+void sort_transactions_date(client *current_client, int recent)
+{
+    //recent == 1 -> print from recent
+    int length = current_client -> length_transactions;
+    transaction transactions[length];
+    for(int i = 0; i < length; i++)
+    {
+        transactions[i] = current_client -> transactions[i];
+
+    }
+
+    for(int i = 0; i < length - 1; i++)
+    {
+        int idx_min = i;
+        for(int j = i + 1; j < length; j++)
+        {
+            if(compare_dates(transactions[i].transaction_date, transactions[idx_min].transaction_date) == 0)
+            {
+                idx_min = j;
+            }
+        }
+
+        transaction aux = transactions[i];
+        transactions[i] = transactions[idx_min];
+        transactions[idx_min] = aux;
+    }
+
+    if(recent == 0)
+        for(int i = 0; i < length; i++)
+            print_client_transaction(&transactions[i]);
+    else
+        for(int i = length - 1; i >= 0; i--)
+            print_client_transaction(&transactions[i]);
+}
+
 void client_to_text(client *user, char *str)
 {
     strcat(str, user -> name);
@@ -495,10 +585,7 @@ void client_to_text(client *user, char *str)
 }
 
 /*
-    TODO: Sort transactions
-    TODO: Saving client data into utilizatori.in
-    TODO: cerr if not found fin
-    TODO: Errors for wrong variable type in inputs
+    TODO:
 */
 int main()
 {
@@ -660,6 +747,66 @@ int main()
                         unknown_command_err();
                     }
                 }
+                else if(strcmp(command, "sort") == 0)
+                {
+                    cout << "\tSort transactions" << endl;
+                    cout << "Sort by date (date)" << endl;
+                    cout << "Sort by sum (sum)" << endl;
+                    cin >> command;
+
+                    if(strcmp(command, "date") == 0)
+                    {
+                        cout << "Sort from most recent to oldest (type recent, else oldest):" << endl;
+                        char recent[100];
+                        int recent_int;
+                        cin >> recent;
+                        cout << endl;
+                        if(strcmp(recent, "oldest") == 0)
+                        {
+                            cout << "Sorting from most recent to oldest" << endl << endl;
+                            recent_int = 0;
+                        }
+                        else if(strcmp(recent, "recent") == 0)
+                        {
+                            cout << "Sorting from oldest to most recent" << endl << endl;
+                            recent_int = 1;
+                        }
+                        else
+                            recent_int = -1;
+
+                        if(recent_int != -1)
+                            sort_transactions_date(selected_client, recent_int);
+                        else
+                            cout << "Unknown command" << endl;
+                    }
+                    else if(strcmp(command, "sum") == 0)
+                    {
+                        cout << "Sort from greatest sum to smallest (type greatest, else smallest):" << endl;
+                        char greatest[100];
+                        int greatest_int;
+                        cin >> greatest;
+                        if(strcmp(greatest, "smallest") == 0)
+                        {
+                            cout << "Sorting from greatest to smallest" << endl << endl;
+                            greatest_int = 0;
+                        }
+                        else if(strcmp(greatest, "greatest") == 0)
+                        {
+                            cout << "Sorting from smallest to greatest" << endl << endl;
+                            greatest_int = 1;
+                        }
+                        else
+                            greatest_int = -1;
+
+                        if(greatest_int != -1)
+                            sort_transactions_sum(selected_client, greatest_int);
+                        else
+                            cout << "Unknown command" << endl;
+                    }
+                    else
+                        cout << "Unknown command" << endl;
+
+                }
                 else if(strcmp(command, "deposit") == 0)
                 {
                     int sum;
@@ -704,7 +851,7 @@ int main()
         client_to_text(&clients[i], save_content);
     }
 
-    ofstream fout("utilizatori.out"); // Temporary .out to make sure were not overwriting data containing errors;
+    ofstream fout("utilizatori.in");
     fout << save_content;
     fout.close();
     return 0;
