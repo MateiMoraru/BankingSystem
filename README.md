@@ -1,50 +1,129 @@
-# Primite Banking System
+Sure! Here's a version with simpler language:
 
 ---
 
-## Basic commands/menus
+# Banking System - C++ Project
 
-### Primary Menu
+## Overview
 
-1. Login (login) - Requires your client id;
-2. Create account (create) - Requires name and surname;
-3. Show all clients (show) - Prints all the client data;
-4. Exit (exit) - Quit the program, global command;
+This is a simple banking system written in C++. It allows users to create accounts, make transactions, deposit money, and transfer money between accounts. The system also lets users view account details, search and sort transactions, and manage funds.
 
-After logging in, you are prompted into the secondary menu
+## Main Features
 
-### Secondary Menu
+- **Account Management**:
+  - Create a new account with a unique ID, first name, and last name.
+  - Log in with your account ID to see your account details.
+  - View your balance and transaction history.
 
-1. Show data (show) - Prompts you into the *Show Data Menu*;
-2. Sort transactions (sort) - Sorts transactions *Sort Menu*;
-3. Search transaction (search) - Prompts you into another menu (search by receiver's id, sum of money transfered, as well as the date);
-4. Send money (transfer) - Requires receiver id and sum;
-5. Deposit (deposit) - Requires the amount you want to deposit into your account;
-6. Logout (logout) - Logs you out of your account, prompts you back into the *Primary Menu*;
+- **Transaction Management**:
+  - Transfer money to other users.
+  - Deposit money into your account.
+  - Sort and search transactions by date, amount, sender, or receiver.
 
-### Show Data Menu
+- **File Management**:
+  - Account and transaction data are saved in a file called `utilizatori.in`.
+  - The program reads from and writes to this file.
 
-1. Name (name) - Prints the name of the account;
-2. Surname (surname) - Prints the surname of the account;
-3. Balance (balance) - Prints account balance;
-4. ID (id) - Prints account id;
-5. Transactions (transactions) - Prints account transactions;
-6. All (a) - Prints everything;
+## Core Structures
 
-### Sort Menu
+### `struct date`
+Stores the date of a transaction:
+```cpp
+struct date {
+    int day, month, year;
+};
+```
 
-1. Sort by date (date) - Asks you wheather you want to sort from recent to oldest transaction date
-2. Sort by sum (sum) - Asks you wheather you want to sort from greatest to smallest transaction sum
+### `struct transaction`
+Represents a transaction, including the sender’s ID, receiver’s ID, amount, and transaction date:
+```cpp
+struct transaction {
+    int emitter_id;
+    int receiver_id;
+    int sum;
+    date transaction_date;
+};
+```
 
-### Search Transaction
-Looks for the specified criterium and prints all the matched transfers
+### `struct client`
+Holds a client’s personal details and transaction information:
+```cpp
+struct client {
+    char name[99];
+    char surname[99];
+    int _id;
+    float balance;
+    transaction transactions[100];
+    int length_transactions;
+};
+```
 
-1. Reciever's ID
-2. Emitter's ID
-2. Date
-3. Sum
+## Main Functions
 
-<br>
----
-<br>
-*TODO: Sorting accounts by multiple parameters;*
+### 1. **Account and Transaction Management**
+
+- **`create_account()`**:
+    - Creates a new account with a unique ID and a starting balance of 0.
+    - Asks for the user’s name and surname.
+
+- **`login()`**:
+    - Lets a user log in with their unique ID.
+    - Checks if the ID exists in the system, then shows the user’s account details.
+
+- **`transfer()`**:
+    - Lets a user send money to another user.
+    - Asks for the receiver’s ID and the amount to send, checks if everything is valid, then updates both accounts.
+
+- **`deposit()`**:
+    - Lets a user deposit money into their account.
+    - Asks for the amount to deposit and adds it to the user’s balance.
+
+### 2. **Transaction Sorting and Searching**
+
+- **`sort_transactions_menu()`**:
+    - Lets the user sort transactions by:
+      - **Date**: Sort by when the transaction happened.
+      - **Amount**: Sort by the money transferred.
+
+- **`search_transactions_menu()`**:
+    - Lets the user search for transactions by:
+      - **Receiver ID**: Find transactions where a specific person received money.
+      - **Emitter ID**: Find transactions made by a specific person.
+      - **Transaction Amount**: Find transactions with a specific amount.
+      - **Date**: Find transactions on a specific date.
+
+### 3. **Helper Functions**
+
+- **`is_file_empty()`**:
+    - Checks if the file storing user data is empty.
+    - Returns `true` if the file is empty, `false` if not.
+
+- **`except_error()`**:
+    - Displays an error message and stops the program if something goes wrong.
+    - Takes a custom message and an exit code as inputs.
+
+- **`float_to_char()`**:
+    - Converts a decimal number into a string.
+    - Works with both whole numbers and decimals.
+
+## File Format
+
+The user information and transaction data are saved in the file `utilizatori.in` in the following format:
+
+1. **User Information**:
+    - **Name**: The user’s first name.
+    - **Surname**: The user’s last name.
+    - **ID**: A unique ID for each user.
+    - **Balance**: The user’s current account balance.
+
+2. **Transactions** (if any):
+    - Each transaction includes:
+        - **Emitter ID**: The user sending the money.
+        - **Receiver ID**: The user receiving the money.
+        - **Amount**: The amount of money sent.
+        - **Date**: The date of the transaction in the format `day/month/year`.
+
+### Example Format:
+```
+Moraru Matei 1001 150.00 | 1001 1002 350.00 22 1 2023 ; 1003 1001 50.00 23 1 2023 }
+```
