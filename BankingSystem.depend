@@ -17,3 +17,13 @@
 	<cstdlib>
 	<cctype>
 
+1740068781 source:c:\users\morar\onedrive\documents\proiectinformatica\temp\primitivebankingsystem\main.cpp
+	<iostream>
+	<ctime>
+	<chrono>
+	<cstring>
+	<string>
+	<fstream>
+	<cstdlib>
+	<cctype>
+
