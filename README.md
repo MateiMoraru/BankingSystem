@@ -1,5 +1,3 @@
-Sure! Here's a version with simpler language:
-
 ---
 
 # Banking System - C++ Project
