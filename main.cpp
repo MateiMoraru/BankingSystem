@@ -126,6 +126,23 @@ void except_error(char *message, int code)
     exit(code);
 }
 
+int cin_fail_int() // If program waited for int and got string
+{
+    int value;
+    while (true)
+    {
+        cin >> value;
+
+        if (!cin.fail()) // Checks if got wrong input
+            return value; // If not, return int
+
+        cin.clear(); // Clears the state of the cin
+        cin.ignore(10000, '\n'); // Clears the data in cin
+        cout << "Please enter a valid int, or type -1 to exit: ";
+    }
+    return value;
+}
+
 bool is_char_in_array(char* arr, char target) {
     for (int i = 0; arr[i] != '\0'; i++) {
         if (arr[i] == target) {
@@ -216,7 +233,7 @@ char* float_to_char(float number) {
             str[i] = str[index - 1 - i];
             str[index - 1 - i] = temp;
         }
-        str[index] = '\0';  // Null terminate the string
+        str[index] = '\0';  // Null terminates the string
     } else {
         // Handle float formatting (two decimal places)
         int int_part = (int)number;
@@ -375,18 +392,7 @@ client* login(client clients[], int length_clients)
 {
     int id;
     cout << "Input your id: ";
-    cin >> id;
-
-    // If the user provides unexpected input, reprompt them with the question.
-    while(cin.fail() && id != -1)
-    {
-        cout << "Please input a valid ID! (type an int, or -1 if you want to exit)" << endl;
-        // Deletes the current cin state
-        cin.clear();
-        // Deletes the current cin data
-        cin.ignore(1000, '\n');
-        cin >> id;
-    }
+    id = cin_fail_int();
 
     if(id == -1)
         return nullptr;
@@ -416,26 +422,8 @@ client create_account(int clients_length)
     cout << "\tCreate account" << endl;
     cout << "Enter your name: ";
     cin >> name;
-    while(cin.fail() && name == "-1")
-    {
-        cout << "Please input a valid name! (type a string, or -1 if you want to exit)" << endl;
-        // Deletes the current cin state
-        cin.clear();
-        // Deletes the current cin data
-        cin.ignore(1000, '\n');
-        cin >> name;
-    }
     cout << endl << "Enter your surname (if you have two/more surnames, use \"-\" between them): ";
     cin >> surname;
-    while(cin.fail() && surname == "-1")
-    {
-        cout << "Please input a valid surname! (type a string, or -1 if you want to exit)" << endl;
-        // Deletes the current cin state
-        cin.clear();
-        // Deletes the current cin data
-        cin.ignore(1000, '\n');
-        cin >> surname;
-    }
     cout << endl;
 
     client user;
@@ -692,9 +680,6 @@ void client_to_text(client *user, char *str)
     strcat(str, " }\n");
 }
 
-/*
-    TODO:
-*/
 int main()
 {
     // Initializing current date for automating future transactions
@@ -817,46 +802,27 @@ int main()
                         {
                             int id;
                             cout << "Specify the id: ";
-                            cin >> id;
-                            cout << endl;
-                            if(!cin.fail())
+                            id = cin_fail_int();
+                            if(id != -1)
                                 search_transaction_receiver_id(selected_client, id);
-                            else
-                            {
-                                cout << "Please input valid numbers!!!" << endl;
-                                cin.clear();
-                                cin.ignore(1000, '\n');
-                            }
                         }
                         else if(strcmp(subcommand, "emitter") == 0)
                         {
                             int id;
                             cout << "Specify the id: ";
-                            cin >> id;
+                            id = cin_fail_int();
                             cout << endl;
-                            if(!cin.fail())
+                            if(id != -1)
                                 search_transaction_emitter_id(selected_client, id);
-                            else
-                            {
-                                cout << "Please input valid numbers!!!" << endl;
-                                cin.clear();
-                                cin.ignore(1000, '\n');
-                            }
                         }
                         else if(strcmp(subcommand, "sum") == 0)
                         {
                             int sum;
                             cout << "Specify the id: ";
-                            cin >> sum;
+                            sum = cin_fail_int();
                             cout << endl;
-                            if(!cin.fail())
+                            if(sum != -1)
                                 search_transaction_sum(selected_client, sum);
-                            else
-                            {
-                                cout << "Please input valid numbers!!!" << endl;
-                                cin.clear();
-                                cin.ignore(1000, '\n');
-                            }
                         }
                         else if(strcmp(subcommand, "date") == 0)
                         {
@@ -864,6 +830,7 @@ int main()
                             int day, month, year;
                             cin >> day >> month >> year;
                             cout << endl;
+                            // Here it would be annoying to look for fail in every case :)
                             if(!cin.fail())
                                 search_transaction_date(selected_client, day, month, year);
                             else
@@ -890,10 +857,13 @@ int main()
                         if(strcmp(subcommand, "date") == 0)
                         {
                             cout << "Sort from most recent to oldest (type recent, else oldest):" << endl;
+
                             char recent[100];
                             int recent_int;
-                            cin >> recent;
+
+                            recent = cin_fail_int();
                             cout << endl;
+
                             if(strcmp(recent, "oldest") == 0)
                             {
                                 cout << "Sorting from most recent to oldest" << endl << endl;
@@ -915,9 +885,12 @@ int main()
                         else if(strcmp(subcommand, "sum") == 0)
                         {
                             cout << "Sort from greatest sum to smallest (type greatest, else smallest):" << endl;
+
                             char greatest[100];
                             int greatest_int;
-                            cin >> greatest;
+
+                            greatest = cin_fail_int();
+
                             if(strcmp(greatest, "smallest") == 0)
                             {
                                 cout << "Sorting from greatest to smallest" << endl << endl;
@@ -944,17 +917,11 @@ int main()
                 {
                     int sum;
                     cout << "How much do you want to deposit: ";
-                    cin >> sum;
-                    if(!cin.fail())
+                    sum = cin_fail_int();
+                    if(sum != -1)
                     {
                         selected_client -> balance += sum;
                         cout << endl << "Current balance: " << selected_client -> balance << endl;
-                    }
-                    else
-                    {
-                        cout << "Please input valid numbers!!!" << endl;
-                        cin.clear();
-                        cin.ignore(1000, '\n');
                     }
                 }
                 else if(strcmp(command, "transfer") == 0)
@@ -991,5 +958,6 @@ int main()
     }
     fout << save_content;
     fout.close();
+    cout << "File saved successfully!" << endl;
     return 0;
 }
