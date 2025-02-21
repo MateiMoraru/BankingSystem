@@ -14,6 +14,8 @@
 using namespace std;
 
 const char SAVE_FILE_NAME[20] = "utilizatori.in";
+const char LOG_FILE_NAME[20] = "log.log";
+int next_client_id = -1;
 
 struct date
 {
@@ -160,6 +162,11 @@ int size_array(char* arr)
     return s + 1;
 }
 
+void log(ofstream& file, char* message, date current_date)
+{
+    file << "[" << current_date.day << ":" << current_date.month << ":" << current_date.year << "] " << message << ";\n";
+}
+
 float str_to_float(char *str)
 {
     float result = 0.0f;
@@ -295,6 +302,7 @@ bool is_file_empty(const char* filename) {
 int read_clients(client *clients)
 {
     int length_clients = 0;
+    int last_id = -1;
 
     ifstream fin(SAVE_FILE_NAME);
 
@@ -342,6 +350,7 @@ int read_clients(client *clients)
 
         fin >> str;
         current_client._id = str_to_float(str);
+        last_id = current_client._id;
 
         fin >> str;
         current_client.balance = str_to_float(str);
@@ -385,6 +394,7 @@ int read_clients(client *clients)
 
     }
     fin.close();
+    next_client_id = last_id + 1;
     return length_clients;
 }
 
@@ -415,7 +425,7 @@ void unknown_command_err()
 
 client create_account(int clients_length)
 {
-    int id = clients_length + 1000 + 1;
+    int id = next_client_id;
     int balance = 0;
     char name[999], surname[999];
 
@@ -433,24 +443,27 @@ client create_account(int clients_length)
     user._id = id;
     user.length_transactions = 0;
 
+    next_client_id++;
+
     return user;
 }
 
-void transfer(client *clients, client *selected_client, date current_date, int length_clients)
+void transfer(client *clients, client *selected_client, date current_date, int length_clients, ofstream& log_file)
 {
     int emitter = selected_client -> _id;
     int receiver;
     int sum;
+    char log_message[100];
 
     cout << "\tTransfer money" << endl;
     cout << "To whom do you want to send money to? ";
     cin >> receiver;
 
-    int ok = 0;
-    while((receiver == emitter || receiver <= 1000 || receiver >= length_clients || cin.fail()) && ok == 0)
+    while((receiver == emitter || receiver <= 1000 || receiver >= length_clients + 1000 || cin.fail()))
     {
+        cout << "A" << (receiver == emitter) << " " << (receiver <= 1000) << " " << (receiver >= length_clients + 1000) << " " << cin.fail() << endl;
         if(receiver == -1)
-            ok = 1;
+            return;
         else
         {
             if(cin.fail())
@@ -466,11 +479,10 @@ void transfer(client *clients, client *selected_client, date current_date, int l
     cout << endl << "How much do you want to send? ";
     cin >> sum;
 
-    ok = 0;
-    while((sum > selected_client -> balance || sum <= 0 || cin.fail()) && ok == 0)
+    while((sum > selected_client -> balance || sum <= 0 || cin.fail()))
     {
         if(sum == -1)
-            ok = 1;
+            return;
         else
         {
             if(cin.fail())
@@ -485,6 +497,12 @@ void transfer(client *clients, client *selected_client, date current_date, int l
         }
     }
 
+    strcpy(log_message, "Client transfered ");
+    strcat(log_message, float_to_char(sum));
+    strcat(log_message, " to ");
+    strcat(log_message, float_to_char(receiver));
+    log(log_file, log_message, current_date);
+
     transaction new_transaction;
     new_transaction.emitter_id = emitter;
     new_transaction.receiver_id = receiver;
@@ -498,6 +516,8 @@ void transfer(client *clients, client *selected_client, date current_date, int l
     selected_client -> transactions[selected_client ->length_transactions] = new_transaction;
     selected_client ->length_transactions++;
     selected_client -> balance -= sum;
+
+    cout << "Transaction was successful!" << endl;
 }
 
 // Search transaction
@@ -690,6 +710,9 @@ int main()
     current_date.month = 1 + current_time -> tm_mon;
     current_date.day = current_time -> tm_mday;
 
+    ofstream log_file(LOG_FILE_NAME, ios::app);
+    char log_message[100] = "";
+
     int length_clients = 0;
     client clients[100];
     client *selected_client;
@@ -703,6 +726,8 @@ int main()
     cout << "Pentru a salva modificarile facute in useri, tastati \"exit\" pentru a termina programul!" << endl << endl;
 
     length_clients = read_clients(clients);
+    if(next_client_id == -1)
+        next_client_id = 1001;
 
     char command[99] = "";
     char subcommand[99] = "";
@@ -743,6 +768,9 @@ int main()
                     {
                         cout << "\tSuccessfully logged in, " << selected_client->name << "!" << endl;
                         logged_in = true;
+
+                        strcpy(log_message, "Client logged in as ");
+                        log(log_file, strcat(log_message, float_to_char(selected_client->_id)), current_date);
                     }
                 }
                 else if(strcmp(command, "create") == 0)
@@ -750,6 +778,9 @@ int main()
                     clients[length_clients] = create_account(length_clients);
                     print_client_data(clients[length_clients]);
                     length_clients++;
+
+                    strcpy(log_message, "Client created account ");
+                    log(log_file, strcat(log_message, float_to_char(clients[length_clients - 1]._id)), current_date);
                 }
                 else if(strcmp(command, "show") == 0)
                 {
@@ -861,7 +892,7 @@ int main()
                             char recent[100];
                             int recent_int;
 
-                            recent = cin_fail_int();
+                            cin >> recent;
                             cout << endl;
 
                             if(strcmp(recent, "oldest") == 0)
@@ -889,7 +920,7 @@ int main()
                             char greatest[100];
                             int greatest_int;
 
-                            greatest = cin_fail_int();
+                            cin >> greatest;
 
                             if(strcmp(greatest, "smallest") == 0)
                             {
@@ -922,16 +953,55 @@ int main()
                     {
                         selected_client -> balance += sum;
                         cout << endl << "Current balance: " << selected_client -> balance << endl;
+
+                        strcpy(log_message, "Client deposited ");
+                        log(log_file, strcat(log_message, float_to_char(sum)), current_date);
                     }
                 }
                 else if(strcmp(command, "transfer") == 0)
                 {
-                    transfer(clients, selected_client, current_date, length_clients);
+                    transfer(clients, selected_client, current_date, length_clients, log_file);
                 }
                 else if(strcmp(command, "logout") == 0)
                 {
                     selected_client = nullptr;
                     logged_in = false;
+                    strcpy(log_message, "Client logged out");
+                    log(log_file, log_message, current_date);
+                }
+                else if (strcmp(command, "delete") == 0)
+                {
+                    cout << "Are you sure you want to delete your account? (yes/no): ";
+                    char confirmation[10];
+                    cin >> confirmation;
+
+                    if (strcmp(confirmation, "yes") == 0)
+                    {
+                        int id = selected_client -> _id;
+                        int ok = 0;
+                        for (int i = 0; i < length_clients && ok == 0; i++)
+                        {
+                            if (&clients[i] == selected_client)
+                            {
+                                for (int j = i; j < length_clients - 1; j++)
+                                {
+                                    clients[j] = clients[j + 1];
+                                }
+
+                                length_clients--;
+                                selected_client = nullptr;
+                                logged_in = false;
+                                cout << "Account successfully deleted." << endl;
+                                strcpy(log_message, "Client deleted their account");
+                                log(log_file, log_message, current_date);
+                                ok = 1;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        cout << "Account deletion canceled." << endl;
+                    }
                 }
                 else
                 {
@@ -958,6 +1028,7 @@ int main()
     }
     fout << save_content;
     fout.close();
+    log_file.close();
     cout << "File saved successfully!" << endl;
     return 0;
 }
