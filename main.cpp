@@ -1,6 +1,6 @@
 /*!
     TODO: Maybe use "cin.getline" instead of "cin >> " to prevent buffer overflow?
-    TODO: Color codes?
+    TODO: in main, multiple show options for loans
 */
 
 #include <iostream>
@@ -38,6 +38,9 @@ struct client
     float balance;
     transaction transactions[100];
     int length_transactions;
+    int loan_amount;
+    int monthly_payment;
+    date last_payment_date;
 };
 
 void print_client_transaction(transaction *transfer)
@@ -57,7 +60,7 @@ void print_client_transactions(client &current_client)
     for(int i = 0; i < current_client.length_transactions; i++)
     {
         current_transaction = current_client.transactions[i];
-        cout << "transaction " << i + 1 << ": " << endl;
+        cout << "Transaction " << i + 1 << ": " << endl;
         print_client_transaction(&current_transaction);
     }
 }
@@ -68,6 +71,9 @@ void print_client_data(client &current_client)
     cout << "Prenume: " << current_client.surname << endl;
     cout << "ID: " << current_client._id << endl;
     cout << "Sold: " << current_client.balance << endl;
+    cout << "Loan amount: " << current_client.loan_amount << endl;
+    cout << "Monthly payment: " << current_client.monthly_payment << endl;
+    cout << "Loan last payment date: " << current_client.last_payment_date.day << ":" << current_client.last_payment_date.month << ":" << current_client.last_payment_date.year << endl;
     cout << endl;
     print_client_transactions(current_client);
     cout << endl;
@@ -128,7 +134,7 @@ void except_error(char *message, int code)
     exit(code);
 }
 
-int cin_fail_int() // If program waited for int and got string
+int cin_fail_int() // If program expected for int and got string
 {
     int value;
     while (true)
@@ -356,6 +362,21 @@ int read_clients(client *clients)
         current_client.balance = str_to_float(str);
 
         fin >> str;
+        current_client.loan_amount = str_to_float(str);
+
+        fin >> str;
+        current_client.monthly_payment = str_to_float(str);
+
+        fin >> str;
+        current_client.last_payment_date.day = str_to_float(str);
+
+        fin >> str;
+        current_client.last_payment_date.month = str_to_float(str);
+
+        fin >> str;
+        current_client.last_payment_date.year = str_to_float(str);
+
+        fin >> str;
 
         // Transactions
         if(str[0] == '|')
@@ -442,6 +463,13 @@ client create_account(int clients_length)
     user.balance = balance;
     user._id = id;
     user.length_transactions = 0;
+    user.loan_amount = 0;
+
+    time_t t = time(nullptr);
+    tm *current_time = localtime(&t);
+    user.last_payment_date.year = 1900 + current_time->tm_year;
+    user.last_payment_date.month = 1 + current_time->tm_mon;
+    user.last_payment_date.day = current_time->tm_mday;
 
     next_client_id++;
 
@@ -518,6 +546,80 @@ void transfer(client *clients, client *selected_client, date current_date, int l
     selected_client -> balance -= sum;
 
     cout << "Transaction was successful!" << endl;
+}
+
+void loan(client *selected_client)
+{
+    int loan_amount;
+    cout << "Enter loan amount: ";
+    loan_amount = cin_fail_int();
+
+    if (loan_amount <= 0) {
+        cout << "Invalid loan amount!" << endl;
+        return;
+    }
+
+    selected_client->loan_amount += loan_amount;
+    selected_client->monthly_payment = loan_amount / 12; // 12-month repayment
+    selected_client->balance += loan_amount;
+
+    cout << "Loan approved! Monthly payment: " << selected_client->monthly_payment << endl;
+}
+
+int calculate_months_since_last_payment(date last_payment_date, date current_date) {
+    int years_diff = current_date.year - last_payment_date.year;
+    int months_diff = current_date.month - last_payment_date.month;
+
+    if(months_diff < 0) {
+        months_diff += 12;
+        years_diff--;
+    }
+
+    return years_diff * 12 + months_diff;
+}
+
+void deduct_loan_payment(client *selected_client, date current_date) {
+    if(selected_client->loan_amount > 0) {
+        int months_passed = calculate_months_since_last_payment(selected_client->last_payment_date, current_date);
+
+        if(months_passed > 0) {
+            for(int i = 0; i < months_passed; i++) {
+                if(selected_client->loan_amount >= selected_client->monthly_payment) {
+                    if(selected_client -> balance >= selected_client -> monthly_payment)
+                    {
+                        selected_client->loan_amount -= selected_client->monthly_payment;
+                        selected_client->balance -= selected_client->monthly_payment;
+                        cout << "Loan payment of " << selected_client->monthly_payment << " deducted." << endl;
+                    }
+                    else
+                    {
+                        cout << "You dont have enough money to pay your loans!" << endl;
+                        return;
+                    }
+
+                } else {
+                    if(selected_client -> balance >= selected_client -> loan_amount)
+                    {
+                        selected_client->balance -= selected_client->loan_amount;
+                        cout << "Remaining loan of " << selected_client->loan_amount << " deducted." << endl;
+                        selected_client->loan_amount = 0;
+                        selected_client->last_payment_date = current_date;
+                        return;
+                    }
+                    else
+                    {
+                        cout << "You dont have enough money to pay your loans!" << endl;
+                        return;
+                    }
+                }
+            }
+
+            // Update the last payment date
+            selected_client->last_payment_date = current_date;
+        }
+    } else {
+        cout << "Your loan balance is 0!" << endl;
+    }
 }
 
 // Search transaction
@@ -677,6 +779,17 @@ void client_to_text(client *user, char *str)
     strcat(str, float_to_char(user -> _id));
     strcat(str, " ");
     strcat(str, float_to_char(user -> balance));
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> loan_amount));
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> monthly_payment));
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> last_payment_date.day));
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> last_payment_date.month));
+    strcat(str, " ");
+    strcat(str, float_to_char(user -> last_payment_date.year));
+
     strcat(str, " | ");
 
     for(int i = 0; i < user -> length_transactions; i++)
@@ -766,8 +879,10 @@ int main()
                     selected_client = login(clients, length_clients);
                     if(selected_client != nullptr)
                     {
-                        cout << "\tSuccessfully logged in, " << selected_client->name << "!" << endl;
+                        cout << "\tSuccessfully logged in, " << selected_client->name << "!" << endl << endl;
                         logged_in = true;
+
+                        deduct_loan_payment(selected_client, current_date);
 
                         strcpy(log_message, "Client logged in as ");
                         log(log_file, strcat(log_message, float_to_char(selected_client->_id)), current_date);
